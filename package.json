@@ -1,0 +1,11 @@
+{
+  "scripts": {
+    "start": "tsc && electron dist/main.js"
+  },
+  "dependencies": {
+    "dat.gui": "^0.7.9",
+    "electron": "^29.2.0",
+    "typescript": "^5.4.5",
+    "webgl-plot": "^0.7.1"
+  }
+}
