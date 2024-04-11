@@ -1,0 +1,15 @@
+#ber {
+    position: absolute;
+    z-index: 2;
+    left: 20px;
+    bottom: 20px;
+    color: white
+}
+
+#dr {
+    position: absolute;
+    z-index: 2;
+    left: 120px;
+    bottom: 20px;
+    color: white
+}
