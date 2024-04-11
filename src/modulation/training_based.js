@@ -9,10 +9,12 @@ module.exports = class TrainingBasedModulation {
 
     constructor(gui) {
         this.params = {
-            numDataSymbols: 100
+            numDataSymbols: 100,
+            shortPreamble: false
         }
 
         gui.add(this.params, 'numDataSymbols', 0).onChange(() => this.reset());
+        gui.add(this.params, 'shortPreamble').onChange(() => this.reset());
 
         this.isSendingTrainingSymbols = true;
         this.currentSymbolCount = 0;
@@ -34,10 +36,15 @@ module.exports = class TrainingBasedModulation {
     }
 
     nextSymbol(dataSource) {
-        if (this.isSendingTrainingSymbols && this.currentSymbolCount >= 3) {
-            this.isSendingTrainingSymbols = false;
-            this.currentSymbolCount = 0;
-        } else if (!this.isSendingTrainingSymbols && this.currentSymbolCount >= this.params.numDataSymbols) {
+        if (this.isSendingTrainingSymbols) {
+            if (this.params.shortPreamble) {
+                this.isSendingTrainingSymbols = false;
+                this.currentSymbolCount = 0;
+            } else if (this.currentSymbolCount >= 3) {
+                this.isSendingTrainingSymbols = false;
+                this.currentSymbolCount = 0;
+            }
+        } else if (this.currentSymbolCount >= this.params.numDataSymbols) {
             this.isSendingTrainingSymbols = true;
             this.currentSymbolCount = 0;
         }
@@ -45,10 +52,14 @@ module.exports = class TrainingBasedModulation {
         this.currentSymbolCount += 1;
 
         if (this.isSendingTrainingSymbols) {
-            const symbols = [[1, 0, 0], [0, 1, 0], [0, 0, 1]];
-            const symbol = symbols[this.currentSymbolCount - 1];
+            if (this.params.shortPreamble) {
+                return [1, 0, 0];
+            } else {
+                const symbols = [[1, 0, 0], [0, 1, 0], [0, 0, 1]];
+                const symbol = symbols[this.currentSymbolCount - 1];
 
-            return symbol;
+                return symbol;
+            }
         } else {
             return dataSource.nextSymbol();
         }
@@ -56,7 +67,19 @@ module.exports = class TrainingBasedModulation {
 
     update(signal) {
         if (this.isSendingTrainingSymbols) {
-            this.channelMatrixEstimate.subset(math.index([0, 1, 2], this.currentSymbolCount - 1), signal);
+            if (this.params.shortPreamble) {
+                const s = signal.toArray();
+
+                this.channelMatrixEstimate = math.matrix([
+                    [s[0], s[2], s[1]],
+                    [s[1], s[0], s[2]],
+                    [s[2], s[1], s[0]]
+                ]);
+            } else {
+                this.channelMatrixEstimate.subset(math.index([0, 1, 2], this.currentSymbolCount - 1), signal);
+            }
+
+            console.log(this.channelMatrixEstimate);
 
             return undefined;
         } else {
