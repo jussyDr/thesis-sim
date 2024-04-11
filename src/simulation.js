@@ -24,7 +24,7 @@ module.exports = class Simulation {
     constructor(gui) {
         this.params = {
             frequency: 100,
-            noise: 0.05,
+            noise: 0.1,
         }
 
         gui.add(this.params, 'frequency', 0).onFinishChange(() => this.reset());
@@ -52,14 +52,14 @@ module.exports = class Simulation {
         this.modulation = new TrainingBasedModulation(gui.addFolder('modulation'));
         this.modulation.onChange(() => this.reset())
 
-        this.numCorrectSymbols = 0;
-        this.numIncorrectSymbols = 0;
+        this.numCorrectBits = 0;
+        this.numIncorrectBits = 0;
     }
 
     reset() {
         this.clock.start();
-        this.numCorrectSymbols = 0;
-        this.numIncorrectSymbols = 0;
+        this.numCorrectBits = 0;
+        this.numIncorrectBits = 0;
     }
 
     animate() {
@@ -83,25 +83,18 @@ module.exports = class Simulation {
         const estimatedSymbol = this.modulation.update(signal);
 
         if (estimatedSymbol) {
-            var matches = true;
-
             for (var i = 0; i < 3; i++) {
-                if (symbol[i] != estimatedSymbol[i]) {
-                    matches = false;
-                    break;
+                if (symbol[i] == estimatedSymbol[i]) {
+                    this.numCorrectBits += 1;
+                } else {
+                    this.numIncorrectBits += 1;
                 }
             }
 
-            if (matches) {
-                this.numCorrectSymbols += 1;
-            } else {
-                this.numIncorrectSymbols += 1;
-            }
-
-            const bitErrorRate = (this.numIncorrectSymbols / (this.numCorrectSymbols + this.numIncorrectSymbols)) * 100;
+            const bitErrorRate = (this.numIncorrectBits / (this.numCorrectBits + this.numIncorrectBits)) * 100;
             document.getElementById("ber").innerText = "BER: " + bitErrorRate.toFixed(2) + " %";
 
-            const dataRate = (this.numCorrectSymbols + this.numIncorrectSymbols) / this.clock.elapsedTime;
+            const dataRate = (this.numCorrectBits + this.numIncorrectBits) / this.clock.elapsedTime;
             document.getElementById("dr").innerText = "DR: " + dataRate.toFixed(2) + " bps";
         }
     }
