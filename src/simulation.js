@@ -1,4 +1,5 @@
-const THREE = require('three');
+const THREE = global.THREE = require('three');
+const OrbitControls = require("./three_addons/OrbitControls");
 const math = require('mathjs');
 
 const RandomDataSource = require('./data_source/random');
@@ -13,22 +14,24 @@ module.exports = class Simulation {
     scene;
     camera;
     renderer;
-    cube;
+    transmitter;
 
     dataSource;
     modulation;
 
-    numCorrectSymbols;
-    numIncorrectSymbols;
+    numCorrectBits;
+    numIncorrectBits;
 
     constructor(gui) {
         this.params = {
             frequency: 100,
             noise: 0.1,
+            rotation: 10,
         }
 
-        gui.add(this.params, 'frequency', 0).onFinishChange(() => this.reset());
-        gui.add(this.params, 'noise', 0).onFinishChange(() => this.reset());
+        gui.add(this.params, 'frequency', 0).onChange(() => this.reset());
+        gui.add(this.params, 'noise', 0).onChange(() => this.reset());
+        gui.add(this.params, 'rotation', 0).onChange(() => this.reset());
 
         this.clock = new THREE.Clock();
         this.timeAccumulator = 0;
@@ -40,10 +43,13 @@ module.exports = class Simulation {
         this.renderer.setSize(window.innerWidth, window.innerHeight);
         document.body.appendChild(this.renderer.domElement);
 
-        const geometry = new THREE.BoxGeometry(1, 1, 1);
-        const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
-        this.cube = new THREE.Mesh(geometry, material);
-        this.scene.add(this.cube);
+        new OrbitControls(this.camera, this.renderer.domElement);
+
+        const geometry = new THREE.BoxGeometry(1, 0.1, 1);
+        const material = new THREE.MeshBasicMaterial({ color: 0xffffff });
+        this.transmitter = new THREE.Mesh(geometry, material);
+        this.transmitter.position.y = -2;
+        this.scene.add(this.transmitter);
 
         this.camera.position.z = 5;
 
@@ -63,10 +69,11 @@ module.exports = class Simulation {
     }
 
     animate() {
-        this.cube.rotation.x += 0.01;
-        this.cube.rotation.y += 0.01;
+        const delta = this.clock.getDelta();
 
-        this.timeAccumulator += this.clock.getDelta();
+        this.transmitter.rotation.y += ((this.params.rotation * 2 * Math.PI) / 60) * delta;
+
+        this.timeAccumulator += delta;
         const period = 1 / this.params.frequency;
 
         while (this.timeAccumulator >= period) {
@@ -105,7 +112,7 @@ module.exports = class Simulation {
 
         for (var i = 0; i < 3; i++) {
             for (var j = 0; j < 3; j++) {
-                const angleDifference = ((polarizationAngles[i] - polarizationAngles[j]) * Math.PI) / 180;
+                const angleDifference = (((polarizationAngles[i] - polarizationAngles[j]) * Math.PI) / 180) + this.transmitter.rotation.y;
                 const value = Math.cos(angleDifference) ** 2;
 
                 channelMatrix.subset(math.index(i, j), value);

@@ -1,6 +1,6 @@
 const math = require('mathjs');
 
-module.exports = class TrainingBasedModulation {
+module.exports = class SemiBlindModulation {
     params;
     onChangeCallback;
     isSendingTrainingSymbols;
