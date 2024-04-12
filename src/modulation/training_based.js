@@ -79,8 +79,6 @@ module.exports = class TrainingBasedModulation {
                 this.channelMatrixEstimate.subset(math.index([0, 1, 2], this.currentSymbolCount - 1), signal);
             }
 
-            console.log(this.channelMatrixEstimate);
-
             return undefined;
         } else {
             const symbolEstimate = math.multiply(math.inv(this.channelMatrixEstimate), signal);

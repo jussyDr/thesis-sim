@@ -27,11 +27,13 @@ module.exports = class Simulation {
             frequency: 100,
             noise: 0.1,
             rotation: 10,
+            modulation: false
         }
 
         gui.add(this.params, 'frequency', 0).onChange(() => this.reset());
         gui.add(this.params, 'noise', 0).onChange(() => this.reset());
         gui.add(this.params, 'rotation', 0).onChange(() => this.reset());
+        gui.add(this.params, 'modulation', { trainingBased: true }).onChange(() => this.reset());
 
         this.clock = new THREE.Clock();
         this.timeAccumulator = 0;
